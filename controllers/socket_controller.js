@@ -6,28 +6,35 @@ const debug = require("debug")("battleship:socket_controller");
 let io = null; // socket.io server instance
 
 
-const players = [];
-const availableRoom = 1;
-const games = [];
+let players = [];
+let availableRoom = 1;
+let games = [];
 
-const handleNewPlayer = (username, setUserId) => {
-
-	debug(username)
+const handleNewPlayer = function (username) {
 
 	const player = {
 		id: this.id,
 		username: username,
 		boats: [
 			{
-				sloop: 2,
-				cutter: 2,
-				warBrig: 3,
-				grandFrigate: 4,
+				type: 'Sloop',
+				hp: 2,
+			},
+			{
+				type: 'Cutter',
+				hp: 2,
+			},
+			{
+				type: 'War Brig',
+				hp: 3,
+			},
+			{
+				type: 'Grand Frigate',
+				hp: 4,
 			}
 		]
 	}
-
-	setUserId(player.id)
+	console.log(player)
 
 	players.push(player)
 
