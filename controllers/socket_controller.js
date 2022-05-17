@@ -5,6 +5,53 @@
 const debug = require("debug")("battleship:socket_controller");
 let io = null; // socket.io server instance
 
+
+const players = [];
+const availableRoom = 1;
+const games = [];
+
+const handleNewPlayer = (username, setUserId) => {
+
+	debug(username)
+
+	const player = {
+		id: this.id,
+		username: username,
+		boats: [
+			{
+				sloop: 2,
+				cutter: 2,
+				warBrig: 3,
+				grandFrigate: 4,
+			}
+		]
+	}
+
+	setUserId(player.id)
+
+	players.push(player)
+
+	this.join('game-' + availableRoom);
+
+  // if 2, start the game
+  if (players.length === 2) {
+    const room = 'game-' + availableRoom;
+
+    let game = {
+      room,
+      players,
+      ready: 0,
+    };
+
+    games.push(game);
+
+		players = [];
+
+		availableRoom++;
+		
+	}
+}
+
 // usersSearching and game object
 
 /**
@@ -85,6 +132,8 @@ module.exports = function (socket, _io) {
 	io = _io;
 
 	debug(`Client ${socket.id} connected`);
+
+	socket.on("newPlayer", handleNewPlayer);
 
 	// handle user disconnect
 	socket.on("disconnect", handleDisconnect);
