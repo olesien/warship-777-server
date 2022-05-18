@@ -50,8 +50,13 @@ const handleNewPlayer = function (username) {
       ready: 0,
     };
 
+		console.log(game)
+
+		// push this game into the games array
     games.push(game);
 
+		console.log(games)
+		// empty the global players array
 		players = [];
 
 		availableRoom++;
