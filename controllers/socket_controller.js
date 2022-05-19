@@ -111,7 +111,7 @@ const handleConnect = function (username) {
 			"user:joined",
 			`User: ${username} - has connected to ${matchmaking[0].id}`
 		);
-		io.to(matchmaking[0].id).emit("players", "There's 2 players");
+		io.to(matchmaking[0].id).emit("players", matchmaking[0]);
 
 		// this.broadcast.to(room.id).emit('user:disconnected', room.users[this.id]);
 
