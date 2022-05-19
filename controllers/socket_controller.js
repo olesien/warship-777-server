@@ -7,62 +7,8 @@ let io = null; // socket.io server instance
 
 
 let players = [];
-let availableRoom = 1;
 let games = [];
 
-const handleNewPlayer = function (username) {
-
-	const player = {
-		id: this.id,
-		username: username,
-		boats: [
-			{
-				type: 'Sloop',
-				hp: 2,
-			},
-			{
-				type: 'Cutter',
-				hp: 2,
-			},
-			{
-				type: 'War Brig',
-				hp: 3,
-			},
-			{
-				type: 'Grand Frigate',
-				hp: 4,
-			}
-		]
-	}
-	console.log(player)
-
-	players.push(player)
-
-	this.join('game-' + availableRoom);
-
-  // if 2, start the game
-  if (players.length === 2) {
-    const room = 'game-' + availableRoom;
-
-    let game = {
-      room,
-      players,
-      ready: 0,
-    };
-
-		console.log(game)
-
-		// push this game into the games array
-    games.push(game);
-
-		console.log(games)
-		// empty the global players array
-		players = [];
-
-		availableRoom++;
-		
-	}
-}
 
 // usersSearching and game object
 
@@ -118,6 +64,59 @@ const handleNewPlayer = function (username) {
  * -> Receive a chat message and send it further to all in that room
  *
  */
+const handleConnect = function (username) {
+	const player = {
+		id: this.id,
+		username: username,
+		boats: [
+			{
+				type: 'Sloop',
+				hp: 2,
+			},
+			{
+				type: 'Cutter',
+				hp: 2,
+			},
+			{
+				type: 'War Brig',
+				hp: 3,
+			},
+			{
+				type: 'Grand Frigate',
+				hp: 4,
+			}
+		]
+	}
+	console.log("PLAYER", player)
+	
+	players.push(player)
+	
+  // if 2, start the game
+  if (players.length > 1) {
+
+		let game = {
+			room: '',
+			players,
+			ready: 0,
+		}
+		
+		this.join(players[0].id)
+		game.room = players[0].id
+
+		debug(`User: "${username}" has connected with client id: ${this.id}`)
+		// this.broadcast.emit("user:joined", `User: ${username} - has connected`)
+		this.to(game.room).emit("user:joined", `User: ${username} - has connected to ${game.room}`)
+
+		
+		// push this game into the games array
+    games.push(game)
+
+		console.log("GAMESSSS", games)
+		// empty the global players array
+		players = []
+	}
+}
+
 
 /**
  * Handle a user disconnecting
@@ -125,6 +124,23 @@ const handleNewPlayer = function (username) {
  */
 const handleDisconnect = function () {
 	debug(`Client ${this.id} disconnected :(`);
+
+	const game = games.find(game => {
+	const playerInRoom = game.players.some(player => player.id == this.id)
+	
+	if (playerInRoom) return game
+})
+
+
+	// delete game.players[this.id];
+
+	console.log(game)
+	
+
+	// const game = games.find(game => game.room.includes(this.id))
+	// this.to(game).emit("user:disconnect", 'Your opponent has left the building')
+	// console.log(game)
+	// delete game.players[this.id];
 };
 
 /**
@@ -143,9 +159,7 @@ module.exports = function (socket, _io) {
 	// save a reference to the socket.io server instance
 	io = _io;
 
-	debug(`Client ${socket.id} connected`);
-
-	socket.on("newPlayer", handleNewPlayer);
+	socket.on("user:joined", handleConnect)
 
 	// handle user disconnect
 	socket.on("disconnect", handleDisconnect);
