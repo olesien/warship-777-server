@@ -5,7 +5,7 @@
 const debug = require("debug")("battleship:socket_controller");
 let io = null; // socket.io server instance
 
-let players = [];
+let matchmaking = [];
 let games = [];
 
 
@@ -89,29 +89,30 @@ const handleConnect = function (username) {
 	}
 	console.log("PLAYER", player)
 	
-	players.push(player)
+	matchmaking.push(player)
+	// matchmaking.push(player)
 
 	
 	// game.room = players[0].id
-	if (players.length === 1) {
+	if (matchmaking.length === 1) {
 		let game = {
 			room: player.id,
-			players,
+			players: matchmaking,
 			ready: 0,
 		}
 
 		games.push(game)
 	}
 	
-	this.join(players[0].id)
+	this.join(matchmaking[0].id)
 
   // if 2, start the game
-  if (players.length > 1) {
+  if (matchmaking.length > 1) {
 
 		debug(`User: "${username}" has connected with client id: ${this.id}`);
 		// this.broadcast.emit("user:joined", `User: ${username} - has connected`)
-		this.to(players[0].id).emit("user:joined", `User: ${username} - has connected to ${players[0].id}`)
-		io.to(players[0].id).emit("players", "There's 2 players")
+		this.to(matchmaking[0].id).emit("user:joined", `User: ${username} - has connected to ${matchmaking[0].id}`)
+		io.to(matchmaking[0].id).emit("players", "There's 2 players")
 
 		// this.broadcast.to(room.id).emit('user:disconnected', room.users[this.id]);
 
@@ -120,7 +121,7 @@ const handleConnect = function (username) {
 
 		console.log("GAMESSSS", games);
 		// empty the global players array
-		players = [];
+		matchmaking = [];
 	}
 };
 
@@ -141,16 +142,17 @@ const handleDisconnect = function () {
 
 	// delete game.players[this.id];
 
-	console.log(game);
+	console.log("BEFORE", game);
 
 	if (game) {
 		const personWhoLeft = game.players.find(
 			(player) => player.id === this.id
-		);
+			);
+		delete game.players[personWhoLeft];
 		io.to(game.room).emit("game:leave", personWhoLeft);
 	}
 
-	//delete game.players[this.id];
+	console.log("AFTER", game);
 
 	// const game = games.find(game => game.room.includes(this.id))
 	// this.to(game).emit("user:disconnect", 'Your opponent has left the building')
