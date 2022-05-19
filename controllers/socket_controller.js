@@ -8,8 +8,6 @@ let io = null; // socket.io server instance
 let matchmaking = [];
 let games = [];
 
-
-
 // usersSearching and game object
 
 /**
@@ -84,40 +82,40 @@ const handleConnect = function (username) {
 			{
 				type: "Grand Frigate",
 				hp: 4,
-			}
-		]
-	}
-	console.log("PLAYER", player)
-	
-	matchmaking.push(player)
+			},
+		],
+	};
+	console.log("PLAYER", player);
+
+	matchmaking.push(player);
 	// matchmaking.push(player)
 
-	
 	// game.room = players[0].id
 	if (matchmaking.length === 1) {
 		let game = {
 			room: player.id,
 			players: matchmaking,
 			ready: 0,
-		}
+		};
 
-		games.push(game)
+		games.push(game);
 	}
-	
-	this.join(matchmaking[0].id)
 
-  // if 2, start the game
-  if (matchmaking.length > 1) {
+	this.join(matchmaking[0].id);
 
+	// if 2, start the game
+	if (matchmaking.length > 1) {
 		debug(`User: "${username}" has connected with client id: ${this.id}`);
 		// this.broadcast.emit("user:joined", `User: ${username} - has connected`)
-		this.to(matchmaking[0].id).emit("user:joined", `User: ${username} - has connected to ${matchmaking[0].id}`)
-		io.to(matchmaking[0].id).emit("players", "There's 2 players")
+		this.to(matchmaking[0].id).emit(
+			"user:joined",
+			`User: ${username} - has connected to ${matchmaking[0].id}`
+		);
+		io.to(matchmaking[0].id).emit("players", "There's 2 players");
 
 		// this.broadcast.to(room.id).emit('user:disconnected', room.users[this.id]);
 
 		// push this game into the games array
-    
 
 		console.log("GAMESSSS", games);
 		// empty the global players array
@@ -147,9 +145,17 @@ const handleDisconnect = function () {
 	if (game) {
 		const personWhoLeft = game.players.find(
 			(player) => player.id === this.id
-			);
+		);
 		delete game.players[personWhoLeft];
 		io.to(game.room).emit("game:leave", personWhoLeft);
+	}
+	//remove matchmaking
+
+	if (matchmaking.length > 0) {
+		const playerIndex = matchmaking.findIndex(
+			(player) => player.id === this.id
+		);
+		matchmaking.splice(playerIndex, 1);
 	}
 
 	console.log("AFTER", game);
@@ -183,5 +189,4 @@ module.exports = function (socket, _io) {
 
 	// handle hello
 	socket.on("user:hello", handleHello);
-
 };
