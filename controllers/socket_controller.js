@@ -10,6 +10,7 @@ let players = [];
 let games = [];
 
 
+
 // usersSearching and game object
 
 /**
@@ -90,26 +91,34 @@ const handleConnect = function (username) {
 	console.log("PLAYER", player)
 	
 	players.push(player)
-	
-  // if 2, start the game
-  if (players.length > 1) {
 
+	
+	// game.room = players[0].id
+	if (players.length === 1) {
 		let game = {
-			room: '',
+			room: player.id,
 			players,
 			ready: 0,
 		}
-		
-		this.join(players[0].id)
-		game.room = players[0].id
+
+		games.push(game)
+	}
+	
+	this.join(players[0].id)
+
+  // if 2, start the game
+  if (players.length > 1) {
 
 		debug(`User: "${username}" has connected with client id: ${this.id}`)
 		// this.broadcast.emit("user:joined", `User: ${username} - has connected`)
-		this.to(game.room).emit("user:joined", `User: ${username} - has connected to ${game.room}`)
+		this.to(players[0].id).emit("user:joined", `User: ${username} - has connected to ${players[0].id}`)
+		io.to(players[0].id).emit("players", "There's 2 players")
+
+		// this.broadcast.to(room.id).emit('user:disconnected', room.users[this.id]);
 
 		
 		// push this game into the games array
-    games.push(game)
+    
 
 		console.log("GAMESSSS", games)
 		// empty the global players array
@@ -126,10 +135,12 @@ const handleDisconnect = function () {
 	debug(`Client ${this.id} disconnected :(`);
 
 	const game = games.find(game => {
-	const playerInRoom = game.players.some(player => player.id == this.id)
+		const playerInRoom = game.players.some(player => player.id == this.id)
 	
-	if (playerInRoom) return game
-})
+		if (playerInRoom) {
+			return game
+		}
+	})
 
 
 	// delete game.players[this.id];
@@ -166,4 +177,5 @@ module.exports = function (socket, _io) {
 
 	// handle hello
 	socket.on("user:hello", handleHello);
+
 };
