@@ -62,6 +62,12 @@ let games = [];
  * -> Receive a chat message and send it further to all in that room
  *
  */
+const findGameIndex = (room) => {
+	const gameIndex = games.findIndex((game) => game.room === room);
+
+	return gameIndex;
+};
+
 const handleConnect = function (username) {
 	const player = {
 		id: this.id,
@@ -84,6 +90,7 @@ const handleConnect = function (username) {
 				hp: 4,
 			},
 		],
+		ready: false,
 	};
 	console.log("PLAYER", player);
 
@@ -95,7 +102,6 @@ const handleConnect = function (username) {
 		let game = {
 			room: player.id,
 			players: matchmaking,
-			ready: 0,
 		};
 
 		games.push(game);
@@ -176,6 +182,31 @@ const handleHello = async function (data) {
 
 const handleReady = async function (room) {
 	debug("room: " + room + " socketId: " + this.id);
+	const gameIndex = findGameIndex(room);
+	const game = games[gameIndex];
+	if (!game) {
+		return;
+	}
+
+	const players = game.players;
+	//Get player index from the players list. <- Player is the person who made this request
+	const playerIndex = players.findIndex((player) => player.id === this.id);
+	const player = players[playerIndex];
+	//opposite of player
+	const opponentIndex = playerIndex === 1 ? 0 : 1;
+	const opponent = players[opponentIndex];
+
+	if (opponent.ready) {
+		//Other person is already ready. Start game.
+		console.log("Ready!!!");
+		io.to(room).emit("game:start", games[gameIndex]);
+		return;
+	}
+
+	console.log("not ready");
+	//Opponent not ready. Toggle ready state!
+	games[gameIndex].players[playerIndex].ready = !player.ready;
+	io.to(room).emit("game:peopleready", games[gameIndex].players);
 };
 
 /**
