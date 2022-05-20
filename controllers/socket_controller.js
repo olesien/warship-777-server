@@ -174,6 +174,10 @@ const handleHello = async function (data) {
 	debug("Someone said something: ", data);
 };
 
+const handleReady = async function (room) {
+	debug("room: " + room + " socketId: " + this.id);
+};
+
 /**
  * Export controller and attach handlers to events
  *
@@ -186,6 +190,9 @@ module.exports = function (socket, _io) {
 
 	// handle user disconnect
 	socket.on("disconnect", handleDisconnect);
+
+	// person ready
+	socket.on("user:ready", handleReady);
 
 	// handle hello
 	socket.on("user:hello", handleHello);
