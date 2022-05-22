@@ -62,6 +62,10 @@ let games = [];
  * -> Receive a chat message and send it further to all in that room
  *
  */
+
+
+
+
 const handleConnect = function (username) {
 	const player = {
 		id: this.id,
@@ -146,7 +150,7 @@ const handleDisconnect = function () {
 		const personWhoLeft = game.players.find(
 			(player) => player.id === this.id
 		);
-		delete game.players[personWhoLeft];
+
 		io.to(game.room).emit("game:leave", personWhoLeft);
 	}
 	//remove matchmaking
@@ -174,8 +178,43 @@ const handleHello = async function (data) {
 	debug("Someone said something: ", data);
 };
 
+// const findGame = () => {
+// 	const game = games.find((game) => {
+// 		const playerInRoom = game.players.some(
+// 			(player) => player.id == this.id
+// 		);
+
+// 		if (playerInRoom) return game;
+// 	});
+// }
+
+const findGame = (room) => {
+	return games.find(game => game.room === room)
+}
+
+const playerStart = (game) => {
+	const randomNumber = Math.floor(Math.random() * 2) + 1;
+
+	return randomNumber === 1 ? 
+		io.to(game.room).emit("player:start", {
+			player: game.players[0].username, 
+			msg: `Player ${game.players[0].username} starts`})
+		:
+		io.to(game.room).emit("player:start", {
+			player: game.players[1].username, 
+			msg: `Player ${game.players[1].username} starts`})
+}
+
 const handleReady = async function (room) {
 	debug("room: " + room + " socketId: " + this.id);
+
+	const game = findGame(room)
+	game.ready++
+	
+	if (game.ready === 2) {
+		io.to(room).emit("game:start", "Players ready! Starting game...");
+		playerStart(game)
+	}
 };
 
 /**
