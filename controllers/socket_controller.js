@@ -91,6 +91,7 @@ const handleConnect = function (username) {
 			},
 		],
 		ready: false,
+		gameboard: [],
 	};
 	console.log("PLAYER", player);
 
@@ -180,7 +181,7 @@ const handleHello = async function (data) {
 	debug("Someone said something: ", data);
 };
 
-const handleReady = async function (room) {
+const handleReady = async function (room, gameboard) {
 	debug("room: " + room + " socketId: " + this.id);
 	const gameIndex = findGameIndex(room);
 	const game = games[gameIndex];
@@ -196,6 +197,8 @@ const handleReady = async function (room) {
 	const opponentIndex = playerIndex === 1 ? 0 : 1;
 	const opponent = players[opponentIndex];
 
+	games[gameIndex].players[playerIndex].gameboard = gameboard;
+
 	if (opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
@@ -207,6 +210,9 @@ const handleReady = async function (room) {
 	//Opponent not ready. Toggle ready state!
 	games[gameIndex].players[playerIndex].ready = !player.ready;
 	io.to(room).emit("game:peopleready", games[gameIndex].players);
+
+	console.log(games[gameIndex].players[playerIndex]);
+	console.log(games[gameIndex].players[opponentIndex]);
 };
 
 /**
