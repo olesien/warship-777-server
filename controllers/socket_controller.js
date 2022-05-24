@@ -153,7 +153,7 @@ const handleDisconnect = function () {
 		const personWhoLeft = game.players.find(
 			(player) => player.id === this.id
 		);
-		delete game.players[personWhoLeft];
+
 		io.to(game.room).emit("game:leave", personWhoLeft);
 	}
 	//remove matchmaking
@@ -181,6 +181,20 @@ const handleHello = async function (data) {
 	debug("Someone said something: ", data);
 };
 
+const playerStart = (game) => {
+	const randomNumber = Math.floor(Math.random() * 2) + 1;
+
+	return randomNumber === 1
+		? io.to(game.room).emit("player:start", {
+				player: game.players[0].username,
+				msg: `Player ${game.players[0].username} starts`,
+		  })
+		: io.to(game.room).emit("player:start", {
+				player: game.players[1].username,
+				msg: `Player ${game.players[1].username} starts`,
+		  });
+};
+
 const handleReady = async function (room, gameboard) {
 	debug("room: " + room + " socketId: " + this.id);
 	const gameIndex = findGameIndex(room);
@@ -205,6 +219,7 @@ const handleReady = async function (room, gameboard) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
 		io.to(room).emit("game:start", games[gameIndex]);
+		playerStart(game);
 		return;
 	}
 
