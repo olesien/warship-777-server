@@ -199,6 +199,8 @@ const handleReady = async function (room, gameboard) {
 
 	games[gameIndex].players[playerIndex].gameboard = gameboard;
 
+	games[gameIndex].players[playerIndex].ready = !player.ready;
+
 	if (opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
@@ -208,7 +210,6 @@ const handleReady = async function (room, gameboard) {
 
 	console.log("not ready");
 	//Opponent not ready. Toggle ready state!
-	games[gameIndex].players[playerIndex].ready = !player.ready;
 	io.to(room).emit("game:peopleready", games[gameIndex].players);
 
 	console.log(games[gameIndex].players[playerIndex]);
