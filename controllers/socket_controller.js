@@ -68,10 +68,11 @@ const findGameIndex = (room) => {
 	return gameIndex;
 };
 
-const handleConnect = function (username) {
+const handleConnect = function ({ username, avatar }) {
 	const player = {
 		id: this.id,
-		username: username,
+		username,
+		avatar,
 		boats: [
 			{
 				type: "Sloop",
@@ -99,6 +100,7 @@ const handleConnect = function (username) {
 	// matchmaking.push(player)
 
 	// game.room = players[0].id
+
 	if (matchmaking.length === 1) {
 		let game = {
 			room: player.id,
@@ -118,13 +120,15 @@ const handleConnect = function (username) {
 			"user:joined",
 			`User: ${username} - has connected to ${matchmaking[0].id}`
 		);
-		io.to(matchmaking[0].id).emit("players", matchmaking[0]);
+		const game = games.find((game) =>
+			game.players.find((player) => player.id === this.id)
+		);
+		io.to(matchmaking[0].id).emit("players", game);
 
 		// this.broadcast.to(room.id).emit('user:disconnected', room.users[this.id]);
 
 		// push this game into the games array
-
-		console.log("GAMESSSS", games);
+		console.log(game);
 		// empty the global players array
 		matchmaking = [];
 	}
