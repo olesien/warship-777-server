@@ -68,10 +68,10 @@ const findGameIndex = (room) => {
 	return gameIndex;
 };
 
-const handleConnect = function (username) {
+const handleConnect = function (data) {
 	const player = {
 		id: this.id,
-		username: username,
+		username: data.username,
 		boats: [
 			{
 				type: "Sloop",
@@ -92,6 +92,7 @@ const handleConnect = function (username) {
 		],
 		ready: false,
 		gameboard: [],
+		avatar: data.avatar,
 	};
 	console.log("PLAYER", player);
 
@@ -112,11 +113,11 @@ const handleConnect = function (username) {
 
 	// if 2, start the game
 	if (matchmaking.length > 1) {
-		debug(`User: "${username}" has connected with client id: ${this.id}`);
+		debug(`User: "${data.username}" has connected with client id: ${this.id}`);
 		// this.broadcast.emit("user:joined", `User: ${username} - has connected`)
 		this.to(matchmaking[0].id).emit(
 			"user:joined",
-			`User: ${username} - has connected to ${matchmaking[0].id}`
+			`User: ${data.username} - has connected to ${matchmaking[0].id}`
 		);
 		io.to(matchmaking[0].id).emit("players", matchmaking[0]);
 
