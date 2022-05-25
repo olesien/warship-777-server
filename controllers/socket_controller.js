@@ -228,40 +228,11 @@ const handleReady = async function (room, gameboard) {
 	if (opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
-		playerStart(gameIndex);
 		io.to(room).emit("game:start", games[gameIndex]);
-
+		playerStart(game);
 		return;
 	}
 
-	const handleReady = async function (room, gameboard) {
-		debug("room: " + room + " socketId: " + this.id);
-		const gameIndex = findGameIndex(room);
-		const game = games[gameIndex];
-		if (!game) {
-			return;
-		}
-		
-		const players = game.players;
-		//Get player index from the players list. <- Player is the person who made this request
-		const playerIndex = players.findIndex((player) => player.id === this.id);
-		const player = players[playerIndex];
-		//opposite of player
-		const opponentIndex = playerIndex === 1 ? 0 : 1;
-		const opponent = players[opponentIndex];
-		
-		games[gameIndex].players[playerIndex].gameboard = gameboard;
-
-		games[gameIndex].players[playerIndex].ready = !player.ready;
-
-		if (opponent.ready) {
-			//Other person is already ready. Start game.
-			console.log("Ready!!!");
-			io.to(room).emit("game:start", games[gameIndex]);
-			playerStart(game)
-			return;
-		}
-		
 	console.log("not ready");
 	//Opponent not ready. Toggle ready state!
 	io.to(room).emit("game:peopleready", games[gameIndex].players);
