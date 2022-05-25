@@ -104,6 +104,7 @@ const handleConnect = function ({ username, avatar }) {
 	if (matchmaking.length === 1) {
 		let game = {
 			room: player.id,
+			idsTurn: null,
 			players: matchmaking,
 		};
 
@@ -185,8 +186,13 @@ const handleHello = async function (data) {
 	debug("Someone said something: ", data);
 };
 
-const playerStart = (game) => {
+const playerStart = (gameIndex) => {
+	const game = games[gameIndex];
 	const randomNumber = Math.floor(Math.random() * 2) + 1;
+
+	console.log(randomNumber - 1);
+
+	games[gameIndex].idsTurn = game.players[randomNumber - 1].id;
 
 	return randomNumber === 1
 		? io.to(game.room).emit("player:start", {
@@ -222,8 +228,9 @@ const handleReady = async function (room, gameboard) {
 	if (opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
+		playerStart(gameIndex);
 		io.to(room).emit("game:start", games[gameIndex]);
-		playerStart(game);
+
 		return;
 	}
 
@@ -268,6 +275,7 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	} else {
 		//was a miss
 		gridItem.missed = true;
+		games[gameIndex].idsTurn = opponent.id;
 	}
 
 	//update it!
@@ -278,7 +286,7 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 		games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
 	);
 
-	io.to(room).emit("game:peopleready", games[gameIndex].players);
+	io.to(room).emit("game:handleHit", games[gameIndex]);
 };
 
 /**
