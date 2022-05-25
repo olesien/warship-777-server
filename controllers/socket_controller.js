@@ -229,7 +229,7 @@ const handleReady = async function (room, gameboard) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
 		io.to(room).emit("game:start", games[gameIndex]);
-		playerStart(game);
+		playerStart(gameIndex);
 		return;
 	}
 
