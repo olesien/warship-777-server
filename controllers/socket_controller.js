@@ -228,8 +228,10 @@ const handleReady = async function (room, gameboard) {
 	if (opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
-		io.to(room).emit("game:start", games[gameIndex]);
+		
 		playerStart(gameIndex);
+		io.to(room).emit("game:start", games[gameIndex]);
+		
 		return;
 	}
 
