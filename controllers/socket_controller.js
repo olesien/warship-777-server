@@ -68,10 +68,11 @@ const findGameIndex = (room) => {
 	return gameIndex;
 };
 
-const handleConnect = function (username) {
+const handleConnect = function ({ username, avatar }) {
 	const player = {
 		id: this.id,
-		username: username,
+		username,
+		avatar,
 		boats: [
 			{
 				type: "Sloop",
@@ -99,9 +100,11 @@ const handleConnect = function (username) {
 	// matchmaking.push(player)
 
 	// game.room = players[0].id
+
 	if (matchmaking.length === 1) {
 		let game = {
 			room: player.id,
+			idsTurn: null,
 			players: matchmaking,
 		};
 
@@ -118,13 +121,15 @@ const handleConnect = function (username) {
 			"user:joined",
 			`User: ${username} - has connected to ${matchmaking[0].id}`
 		);
-		io.to(matchmaking[0].id).emit("players", matchmaking[0]);
+		const game = games.find((game) =>
+			game.players.find((player) => player.id === this.id)
+		);
+		io.to(matchmaking[0].id).emit("players", game);
 
 		// this.broadcast.to(room.id).emit('user:disconnected', room.users[this.id]);
 
 		// push this game into the games array
-
-		console.log("GAMESSSS", games);
+		console.log(game);
 		// empty the global players array
 		matchmaking = [];
 	}
@@ -181,20 +186,53 @@ const handleHello = async function (data) {
 	debug("Someone said something: ", data);
 };
 
-
-const playerStart = (game) => {
+const playerStart = (gameIndex) => {
+	const game = games[gameIndex];
 	const randomNumber = Math.floor(Math.random() * 2) + 1;
 
-	return randomNumber === 1 ? 
-		io.to(game.room).emit("player:start", {
-			player: game.players[0].username, 
-			msg: `Player ${game.players[0].username} starts`})
-		:
-		io.to(game.room).emit("player:start", {
-			player: game.players[1].username, 
-			msg: `Player ${game.players[1].username} starts`})
-}
+	console.log(randomNumber - 1);
 
+	games[gameIndex].idsTurn = game.players[randomNumber - 1].id;
+
+	return randomNumber === 1
+		? io.to(game.room).emit("player:start", {
+				player: game.players[0].username,
+				msg: `Player ${game.players[0].username} starts`,
+		  })
+		: io.to(game.room).emit("player:start", {
+				player: game.players[1].username,
+				msg: `Player ${game.players[1].username} starts`,
+		  });
+};
+
+const handleReady = async function (room, gameboard) {
+	debug("room: " + room + " socketId: " + this.id);
+	const gameIndex = findGameIndex(room);
+	const game = games[gameIndex];
+	if (!game) {
+		return;
+	}
+
+	const players = game.players;
+	//Get player index from the players list. <- Player is the person who made this request
+	const playerIndex = players.findIndex((player) => player.id === this.id);
+	const player = players[playerIndex];
+	//opposite of player
+	const opponentIndex = playerIndex === 1 ? 0 : 1;
+	const opponent = players[opponentIndex];
+
+	games[gameIndex].players[playerIndex].gameboard = gameboard;
+
+	games[gameIndex].players[playerIndex].ready = !player.ready;
+
+	if (opponent.ready) {
+		//Other person is already ready. Start game.
+		console.log("Ready!!!");
+		playerStart(gameIndex);
+		io.to(room).emit("game:start", games[gameIndex]);
+
+		return;
+	}
 
 	const handleReady = async function (room, gameboard) {
 		debug("room: " + room + " socketId: " + this.id);
@@ -232,6 +270,53 @@ const playerStart = (game) => {
 	console.log(games[gameIndex].players[opponentIndex]);
 };
 
+const handleHit = async function ({ room, columnIndex, rowIndex }) {
+	debug("room: " + room + " socketId: " + this.id);
+	const gameIndex = findGameIndex(room);
+	const game = games[gameIndex];
+	if (!game) {
+		return;
+	}
+
+	console.log(columnIndex, rowIndex);
+
+	const players = game.players;
+	//Get player index from the players list. <- Player is the person who made this request
+	const playerIndex = players.findIndex((player) => player.id === this.id);
+	const player = players[playerIndex];
+	//opposite of player
+	const opponentIndex = playerIndex === 1 ? 0 : 1;
+	const opponent = players[opponentIndex];
+
+	const gridItem = opponent.gameboard[columnIndex][rowIndex];
+	//already been hit/missed
+	if (gridItem.hit || gridItem.missed) {
+		return;
+	}
+	console.log(
+		games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
+	);
+
+	if (gridItem.part) {
+		//was a hit!
+		gridItem.hit = true;
+	} else {
+		//was a miss
+		gridItem.missed = true;
+		games[gameIndex].idsTurn = opponent.id;
+	}
+
+	//update it!
+	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex] =
+		gridItem;
+
+	console.log(
+		games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
+	);
+
+	io.to(room).emit("game:handleHit", games[gameIndex]);
+};
+
 /**
  * Export controller and attach handlers to events
  *
@@ -247,6 +332,9 @@ module.exports = function (socket, _io) {
 
 	// person ready
 	socket.on("user:ready", handleReady);
+
+	// person hit
+	socket.on("user:hit", handleHit);
 
 	// handle hello
 	socket.on("user:hello", handleHello);
