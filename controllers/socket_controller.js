@@ -235,6 +235,52 @@ const handleReady = async function (room, gameboard) {
 	console.log(games[gameIndex].players[opponentIndex]);
 };
 
+const handleHit = async function ({ room, columnIndex, rowIndex }) {
+	debug("room: " + room + " socketId: " + this.id);
+	const gameIndex = findGameIndex(room);
+	const game = games[gameIndex];
+	if (!game) {
+		return;
+	}
+
+	console.log(columnIndex, rowIndex);
+
+	const players = game.players;
+	//Get player index from the players list. <- Player is the person who made this request
+	const playerIndex = players.findIndex((player) => player.id === this.id);
+	const player = players[playerIndex];
+	//opposite of player
+	const opponentIndex = playerIndex === 1 ? 0 : 1;
+	const opponent = players[opponentIndex];
+
+	const gridItem = opponent.gameboard[columnIndex][rowIndex];
+	//already been hit/missed
+	if (gridItem.hit || gridItem.missed) {
+		return;
+	}
+	console.log(
+		games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
+	);
+
+	if (gridItem.part) {
+		//was a hit!
+		gridItem.hit = true;
+	} else {
+		//was a miss
+		gridItem.missed = true;
+	}
+
+	//update it!
+	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex] =
+		gridItem;
+
+	console.log(
+		games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
+	);
+
+	io.to(room).emit("game:peopleready", games[gameIndex].players);
+};
+
 /**
  * Export controller and attach handlers to events
  *
@@ -250,6 +296,9 @@ module.exports = function (socket, _io) {
 
 	// person ready
 	socket.on("user:ready", handleReady);
+
+	// person hit
+	socket.on("user:hit", handleHit);
 
 	// handle hello
 	socket.on("user:hello", handleHello);
