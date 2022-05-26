@@ -93,7 +93,6 @@ const handleConnect = function ({ username, avatar }) {
 		],
 		ready: false,
 		gameboard: [],
-		won: false,
 	};
 	console.log("PLAYER", player);
 
@@ -289,9 +288,10 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	}, 0);
 	console.log(partsHit);
 	if (partsHit >= 4) {
-		player.won = true
-		io.to(room).emit("game:over", player)
 		console.log("game over");
+		io.to(room).emit("game:over", player)
+		// games.splice(gameIndex, 1)
+		console.log(games)
 	}
 
 	//update it!
