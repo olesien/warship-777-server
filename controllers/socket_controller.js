@@ -289,9 +289,10 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	console.log(partsHit);
 	if (partsHit >= 4) {
 		console.log("game over");
+		// console.log("GAMES:BEFORE", games)
 		io.to(room).emit("game:over", player)
 		// games.splice(gameIndex, 1)
-		console.log(games)
+		// console.log("GAMES:AFTER", games)
 	}
 
 	//update it!
