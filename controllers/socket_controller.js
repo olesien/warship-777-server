@@ -150,10 +150,6 @@ const handleDisconnect = function () {
 		if (playerInRoom) return game;
 	});
 
-	// delete game.players[this.id];
-
-	console.log("BEFORE", game);
-
 	if (game) {
 		const personWhoLeft = game.players.find(
 			(player) => player.id === this.id
@@ -170,7 +166,6 @@ const handleDisconnect = function () {
 		matchmaking.splice(playerIndex, 1);
 	}
 
-	console.log("AFTER", game);
 
 	// const game = games.find(game => game.room.includes(this.id))
 	// this.to(game).emit("user:disconnect", 'Your opponent has left the building')
