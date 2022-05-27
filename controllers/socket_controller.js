@@ -306,6 +306,45 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	io.to(room).emit("game:handleHit", games[gameIndex]);
 };
 
+
+	const handleReplay = function (room) {
+		const gameIndex = findGameIndex(room);
+		const game = games[gameIndex];
+		if (!game) {
+			return;
+		}
+	
+		const players = game.players;
+		//Get player index from the players list. <- Player is the person who made this request
+		const playerIndex = players.findIndex((player) => player.id === this.id);
+		const player = players[playerIndex];
+		//opposite of player
+		const opponentIndex = playerIndex === 1 ? 0 : 1;
+		const opponent = players[opponentIndex];
+	
+		console.log(game)
+		console.log(room)
+		console.log("PLAYER:BEFORE", player)
+		console.log("OPPONENT:BEFORE", opponent)
+		// Reset players gameboards
+		player.gameboard = []
+		opponent.gameboard = []
+
+		// resets players ready-state
+		player.ready = false
+		opponent.ready = false
+
+		console.log("PLAYER:AFTER", player)
+		console.log("OPPONENT:AFTER", opponent)
+
+		playerStart(gameIndex);
+
+	}
+
+
+
+
+
 /**
  * Export controller and attach handlers to events
  *
@@ -324,6 +363,9 @@ module.exports = function (socket, _io) {
 
 	// person hit
 	socket.on("user:hit", handleHit);
+
+	// play again
+	socket.on("game:replay", handleReplay);
 
 	// handle hello
 	socket.on("user:hello", handleHello);
