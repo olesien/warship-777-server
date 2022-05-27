@@ -166,7 +166,6 @@ const handleDisconnect = function () {
 		matchmaking.splice(playerIndex, 1);
 	}
 
-
 	// const game = games.find(game => game.room.includes(this.id))
 	// this.to(game).emit("user:disconnect", 'Your opponent has left the building')
 	// console.log(game)
@@ -223,10 +222,10 @@ const handleReady = async function (room, gameboard) {
 	if (opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
-		
+
 		playerStart(gameIndex);
 		io.to(room).emit("game:start", games[gameIndex]);
-		
+
 		return;
 	}
 
@@ -279,11 +278,11 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 
 	const partsHit = gameboard.reduce((prevValue, col) => {
 		const partsHitInCol = col.reduce((prevValue, row) => {
-				if (row.hit) {
-						//row hit
-						return prevValue + 1;
-				}
-				return prevValue;
+			if (row.hit) {
+				//row hit
+				return prevValue + 1;
+			}
+			return prevValue;
 		}, 0);
 		return prevValue + partsHitInCol;
 	}, 0);
@@ -291,7 +290,7 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	if (partsHit >= 4) {
 		console.log("game over");
 		// console.log("GAMES:BEFORE", games)
-		io.to(room).emit("game:over", player)
+		io.to(room).emit("game:over", player);
 		// games.splice(gameIndex, 1)
 		// console.log("GAMES:AFTER", games)
 	}
@@ -307,11 +306,9 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	io.to(room).emit("game:handleHit", games[gameIndex]);
 };
 
-const handleChatMessage = async function(data) {
-	console.log(data)
-
-	debug(data)
-}
+const handleMessage = async function (data) {
+	console.log(data);
+};
 
 /**
  * Export controller and attach handlers to events
@@ -336,5 +333,5 @@ module.exports = function (socket, _io) {
 	socket.on("user:hello", handleHello);
 
 	// handle user sending message
-	socket.on("chat:message", handleChatMessage)
+	socket.on("chat:message", handleMessage);
 };
