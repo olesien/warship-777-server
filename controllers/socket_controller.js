@@ -308,6 +308,10 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 
 const handleMessage = async function (data) {
 	console.log(data);
+
+	io.to(data.room).emit("chat:message", data);
+
+	
 };
 
 /**
