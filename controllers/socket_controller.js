@@ -279,16 +279,44 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 		games[gameIndex].idsTurn = opponent.id;
 	}
 
+	const gameboard = opponent.gameboard;
+	// console.log(gridItem)
+
+	const partsHit = gameboard.reduce((prevValue, col) => {
+		const partsHitInCol = col.reduce((prevValue, row) => {
+				if (row.hit) {
+						//row hit
+						return prevValue + 1;
+				}
+				return prevValue;
+		}, 0);
+		return prevValue + partsHitInCol;
+	}, 0);
+	console.log(partsHit);
+	if (partsHit >= 4) {
+		console.log("game over");
+		// console.log("GAMES:BEFORE", games)
+		io.to(room).emit("game:over", player)
+		// games.splice(gameIndex, 1)
+		// console.log("GAMES:AFTER", games)
+	}
+
 	//update it!
 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex] =
 		gridItem;
 
-	console.log(
-		games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
-	);
+	// console.log(
+	// 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
+	// );
 
 	io.to(room).emit("game:handleHit", games[gameIndex]);
 };
+
+const handleChatMessage = async function(data) {
+	console.log(data)
+
+	debug(data)
+}
 
 /**
  * Export controller and attach handlers to events
@@ -311,4 +339,7 @@ module.exports = function (socket, _io) {
 
 	// handle hello
 	socket.on("user:hello", handleHello);
+
+	// handle user sending message
+	socket.on("chat:message", handleChatMessage)
 };
