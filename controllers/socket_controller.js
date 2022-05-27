@@ -150,10 +150,6 @@ const handleDisconnect = function () {
 		if (playerInRoom) return game;
 	});
 
-	// delete game.players[this.id];
-
-	console.log("BEFORE", game);
-
 	if (game) {
 		const personWhoLeft = game.players.find(
 			(player) => player.id === this.id
@@ -170,7 +166,6 @@ const handleDisconnect = function () {
 		matchmaking.splice(playerIndex, 1);
 	}
 
-	console.log("AFTER", game);
 
 	// const game = games.find(game => game.room.includes(this.id))
 	// this.to(game).emit("user:disconnect", 'Your opponent has left the building')
@@ -279,13 +274,35 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 		games[gameIndex].idsTurn = opponent.id;
 	}
 
+	const gameboard = opponent.gameboard;
+	// console.log(gridItem)
+
+	const partsHit = gameboard.reduce((prevValue, col) => {
+		const partsHitInCol = col.reduce((prevValue, row) => {
+				if (row.hit) {
+						//row hit
+						return prevValue + 1;
+				}
+				return prevValue;
+		}, 0);
+		return prevValue + partsHitInCol;
+	}, 0);
+	console.log(partsHit);
+	if (partsHit >= 4) {
+		console.log("game over");
+		// console.log("GAMES:BEFORE", games)
+		io.to(room).emit("game:over", player)
+		// games.splice(gameIndex, 1)
+		// console.log("GAMES:AFTER", games)
+	}
+
 	//update it!
 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex] =
 		gridItem;
 
-	console.log(
-		games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
-	);
+	// console.log(
+	// 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
+	// );
 
 	io.to(room).emit("game:handleHit", games[gameIndex]);
 };
