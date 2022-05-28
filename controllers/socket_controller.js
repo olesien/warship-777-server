@@ -185,7 +185,7 @@ const playerStart = (gameIndex) => {
 	const game = games[gameIndex];
 	const randomNumber = Math.floor(Math.random() * 2) + 1;
 
-	console.log(randomNumber - 1);
+	// console.log(randomNumber - 1);
 
 	games[gameIndex].idsTurn = game.players[randomNumber - 1].id;
 
@@ -307,13 +307,15 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 };
 
 
-	const handleReplay = function (room) {
+
+	const handleReplay = function (room, grid, awaitPlayers) {
+		console.log(awaitPlayers)
 		const gameIndex = findGameIndex(room);
 		const game = games[gameIndex];
 		if (!game) {
 			return;
 		}
-	
+		
 		const players = game.players;
 		//Get player index from the players list. <- Player is the person who made this request
 		const playerIndex = players.findIndex((player) => player.id === this.id);
@@ -321,24 +323,27 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 		//opposite of player
 		const opponentIndex = playerIndex === 1 ? 0 : 1;
 		const opponent = players[opponentIndex];
-	
-		console.log(game)
-		console.log(room)
-		console.log("PLAYER:BEFORE", player)
-		console.log("OPPONENT:BEFORE", opponent)
-		// Reset players gameboards
-		player.gameboard = []
-		opponent.gameboard = []
+		
+		// console.log(game)
+		// console.log(room)
+		// console.log("PLAYER:BEFORE", player)
+		// console.log("OPPONENT:BEFORE", opponent)
+		if (awaitPlayers === 2) {
+			// Reset players gameboards
+			player.gameboard = []
+			opponent.gameboard = []
 
-		// resets players ready-state
-		player.ready = false
-		opponent.ready = false
-
-		console.log("PLAYER:AFTER", player)
-		console.log("OPPONENT:AFTER", opponent)
-
+			// Reset players ready-state
+			player.ready = false
+			opponent.ready = false
+			// console.log("PLAYER:AFTER", player)
+			// console.log("OPPONENT:AFTER", opponent)
+		}
+		
+		
+		
+		io.to(room).emit("game:replay", awaitPlayers)
 		playerStart(gameIndex);
-
 	}
 
 
