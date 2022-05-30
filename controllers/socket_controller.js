@@ -255,49 +255,77 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	const opponentIndex = playerIndex === 1 ? 0 : 1;
 	const opponent = players[opponentIndex];
 
-	const gridItem = opponent.gameboard[columnIndex][rowIndex];
+	const opponentGridItem = opponent.gameboard[columnIndex][rowIndex];
+	const playerGridItem = player.gameboard[columnIndex][rowIndex];
 	//already been hit/missed
-	if (gridItem.hit || gridItem.missed) {
+	if (opponentGridItem.hit || opponentGridItem.missed) {
 		return;
-	}
-	console.log(
-		games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
-	);
+	} 
+	
+	// console.log(
+	// 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
+	// );
 
-	if (gridItem.part) {
+
+	if (opponentGridItem.part) {
 		//was a hit!
-		gridItem.hit = true;
-	} else {
+		console.log("PLAYER HIT")
+		opponentGridItem.hit = true;
+	} else if (!opponentGridItem.part) {
 		//was a miss
-		gridItem.missed = true;
+		console.log("PLAYER MISS")
+		opponentGridItem.missed = true;
 		games[gameIndex].idsTurn = opponent.id;
 	}
 
-	const gameboard = opponent.gameboard;
-	// console.log(gridItem)
 
-	const partsHit = gameboard.reduce((prevValue, col) => {
-		const partsHitInCol = col.reduce((prevValue, row) => {
+	const opponentGameboard = opponent.gameboard;
+	const opponentPartsHit = opponentGameboard.reduce((prevValue, col) => {
+		const opponentPartsHitInCol = col.reduce((prevValue, row) => {
 				if (row.hit) {
 						//row hit
 						return prevValue + 1;
 				}
 				return prevValue;
 		}, 0);
-		return prevValue + partsHitInCol;
+		return prevValue + opponentPartsHitInCol;
 	}, 0);
-	console.log(partsHit);
-	if (partsHit >= 4) {
+
+
+	// console.log("Opponent Gameboard", opponent.gameboard)
+	// console.log("Player Gameboard", player.gameboard)
+
+
+	const playerGameboard = player.gameboard;
+	// console.log(gridItem)
+
+	const playerPartsHit = playerGameboard.reduce((prevValue, col) => {
+		const playerPartsHitInCol = col.reduce((prevValue, row) => {
+				if (row.hit) {
+						//row hit
+						return prevValue + 1;
+				}
+				return prevValue;
+		}, 0);
+		return prevValue + playerPartsHitInCol;
+	}, 0);
+	console.log(playerPartsHit);
+
+	if (opponentPartsHit >= 4) {
 		console.log("game over");
-		// console.log("GAMES:BEFORE", games)
 		io.to(room).emit("game:over", player)
-		// games.splice(gameIndex, 1)
-		// console.log("GAMES:AFTER", games)
+	} else if (playerPartsHit >= 4) {
+		console.log("game over");
+		io.to(room).emit("game:over", opponent)
 	}
+
 
 	//update it!
 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex] =
-		gridItem;
+		opponentGridItem;
+
+	games[gameIndex].players[playerIndex].gameboard[columnIndex][rowIndex] =
+	playerGridItem;
 
 	// console.log(
 	// 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
