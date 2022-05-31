@@ -267,10 +267,12 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	if (gridItem.part) {
 		//was a hit!
 		gridItem.hit = true;
+		handleHitTrue(room);
 	} else {
 		//was a miss
 		gridItem.missed = true;
 		games[gameIndex].idsTurn = opponent.id;
+		handleMissTrue(room);
 	}
 
 	const gameboard = opponent.gameboard;
@@ -306,12 +308,18 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	io.to(room).emit("game:handleHit", games[gameIndex]);
 };
 
+const handleHitTrue = async function (room) {
+	io.to(room).emit("game:handleHitTrue")
+}
+
+const handleMissTrue = async function (room) {
+	io.to(room).emit("game:handleMissTrue")
+}
+
 const handleMessage = async function (data) {
 	console.log(data);
 
 	io.to(data.room).emit("chat:message", data);
-
-	
 };
 
 /**
@@ -332,6 +340,12 @@ module.exports = function (socket, _io) {
 
 	// person hit
 	socket.on("user:hit", handleHit);
+
+	// person hits player's ship
+	socket.on("game:handleHitTrue", handleHitTrue);
+
+	// person miss player's ship
+	socket.on("game:handleMissTrue", handleMissTrue);
 
 	// handle hello
 	socket.on("user:hello", handleHello);
