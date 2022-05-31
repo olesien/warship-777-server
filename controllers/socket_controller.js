@@ -69,6 +69,8 @@ const findGameIndex = (room) => {
 };
 
 const handleConnect = function ({ username, avatar }) {
+	console.log(matchmaking);
+	console.log(games);
 	const player = {
 		id: this.id,
 		username,
@@ -163,7 +165,9 @@ const handleDisconnect = function () {
 		const playerIndex = matchmaking.findIndex(
 			(player) => player.id === this.id
 		);
-		matchmaking.splice(playerIndex, 1);
+		if (playerIndex >= 0) {
+			matchmaking.splice(playerIndex, 1);
+		}
 	}
 
 	// const game = games.find(game => game.room.includes(this.id))
