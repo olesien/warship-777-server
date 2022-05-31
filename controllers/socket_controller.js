@@ -184,7 +184,7 @@ const playerStart = (gameIndex) => {
 	const game = games[gameIndex];
 	const randomNumber = Math.floor(Math.random() * 2) + 1;
 
-	console.log(randomNumber - 1);
+	// console.log(randomNumber - 1);
 
 	games[gameIndex].idsTurn = game.players[randomNumber - 1].id;
 
@@ -255,28 +255,31 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	const opponentIndex = playerIndex === 1 ? 0 : 1;
 	const opponent = players[opponentIndex];
 
-	const gridItem = opponent.gameboard[columnIndex][rowIndex];
+	const opponentGridItem = opponent.gameboard[columnIndex][rowIndex];
+	const playerGridItem = player.gameboard[columnIndex][rowIndex];
 	//already been hit/missed
-	if (gridItem.hit || gridItem.missed) {
+	if (opponentGridItem.hit || opponentGridItem.missed) {
 		return;
-	}
-	console.log(
-		games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
-	);
+	} 
+	
+	// console.log(
+	// 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
+	// );
 
-	if (gridItem.part) {
+
+	if (opponentGridItem.part) {
 		//was a hit!
-		gridItem.hit = true;
+		console.log("PLAYER HIT")
+		opponentGridItem.hit = true;
 		handleHitTrue(room);
-	} else {
+	} else if (!opponentGridItem.part) {
 		//was a miss
-		gridItem.missed = true;
+		console.log("PLAYER MISS")
+		opponentGridItem.missed = true;
 		games[gameIndex].idsTurn = opponent.id;
 		handleMissTrue(room);
 	}
 
-	const gameboard = opponent.gameboard;
-	// console.log(gridItem)
 
 	const partsHit = gameboard.reduce((prevValue, col) => {
 		const partsHitInCol = col.reduce((prevValue, row) => {
@@ -285,21 +288,55 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 				return prevValue + 1;
 			}
 			return prevValue;
+		}
+	)	
+	const opponentGameboard = opponent.gameboard;
+	const opponentPartsHit = opponentGameboard.reduce((prevValue, col) => {
+		const opponentPartsHitInCol = col.reduce((prevValue, row) => {
+				if (row.hit) {
+						//row hit
+						return prevValue + 1;
+				}
+				return prevValue;
 		}, 0);
-		return prevValue + partsHitInCol;
+		return prevValue + opponentPartsHitInCol;
 	}, 0);
-	console.log(partsHit);
-	if (partsHit >= 4) {
+
+
+	// console.log("Opponent Gameboard", opponent.gameboard)
+	// console.log("Player Gameboard", player.gameboard)
+
+
+	const playerGameboard = player.gameboard;
+	// console.log(gridItem)
+
+	const playerPartsHit = playerGameboard.reduce((prevValue, col) => {
+		const playerPartsHitInCol = col.reduce((prevValue, row) => {
+				if (row.hit) {
+						//row hit
+						return prevValue + 1;
+				}
+				return prevValue;
+		}, 0);
+		return prevValue + playerPartsHitInCol;
+	}, 0);
+	console.log(playerPartsHit);
+
+	if (opponentPartsHit >= 4) {
 		console.log("game over");
-		// console.log("GAMES:BEFORE", games)
-		io.to(room).emit("game:over", player);
-		// games.splice(gameIndex, 1)
-		// console.log("GAMES:AFTER", games)
+		io.to(room).emit("game:over", player)
+	} else if (playerPartsHit >= 4) {
+		console.log("game over");
+		io.to(room).emit("game:over", opponent)
 	}
+
 
 	//update it!
 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex] =
-		gridItem;
+		opponentGridItem;
+
+	games[gameIndex].players[playerIndex].gameboard[columnIndex][rowIndex] =
+	playerGridItem;
 
 	// console.log(
 	// 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
@@ -321,6 +358,49 @@ const handleMessage = async function (data) {
 
 	io.to(data.room).emit("chat:message", data);
 };
+
+
+	const handleReplay = function (room, grid, awaitPlayers) {
+		console.log(awaitPlayers)
+		const gameIndex = findGameIndex(room);
+		const game = games[gameIndex];
+		if (!game) {
+			return;
+		}
+		
+		const players = game.players;
+		//Get player index from the players list. <- Player is the person who made this request
+		const playerIndex = players.findIndex((player) => player.id === this.id);
+		const player = players[playerIndex];
+		//opposite of player
+		const opponentIndex = playerIndex === 1 ? 0 : 1;
+		const opponent = players[opponentIndex];
+		
+		// console.log(game)
+		// console.log(room)
+		// console.log("PLAYER:BEFORE", player)
+		// console.log("OPPONENT:BEFORE", opponent)
+		if (awaitPlayers === 2) {
+			// Reset players gameboards
+			player.gameboard = []
+			opponent.gameboard = []
+
+			// Reset players ready-state
+			player.ready = false
+			opponent.ready = false
+			// console.log("PLAYER:AFTER", player)
+			// console.log("OPPONENT:AFTER", opponent)
+		}
+		
+		
+		
+		io.to(room).emit("game:replay", awaitPlayers)
+		playerStart(gameIndex);
+	}
+
+
+
+
 
 /**
  * Export controller and attach handlers to events
@@ -346,6 +426,9 @@ module.exports = function (socket, _io) {
 
 	// person miss player's ship
 	socket.on("game:handleMissTrue", handleMissTrue);
+	
+	// play again
+	socket.on("game:replay", handleReplay);
 
 	// handle hello
 	socket.on("user:hello", handleHello);
