@@ -281,15 +281,6 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	}
 
 
-	const partsHit = gameboard.reduce((prevValue, col) => {
-		const partsHitInCol = col.reduce((prevValue, row) => {
-			if (row.hit) {
-				//row hit
-				return prevValue + 1;
-			}
-			return prevValue;
-		}
-	)	
 	const opponentGameboard = opponent.gameboard;
 	const opponentPartsHit = opponentGameboard.reduce((prevValue, col) => {
 		const opponentPartsHitInCol = col.reduce((prevValue, row) => {
@@ -343,7 +334,7 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	// );
 
 	io.to(room).emit("game:handleHit", games[gameIndex]);
-};
+}
 
 const handleHitTrue = async function (room) {
 	io.to(room).emit("game:handleHitTrue")
