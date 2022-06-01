@@ -160,6 +160,10 @@ const handleDisconnect = function () {
 		io.to(game.room).emit("game:leave", personWhoLeft);
 	}
 	//remove matchmaking
+	const gameId = games.findIndex((game) => game.room === this.id);
+	if (gameId >= 0) {
+		games.splice(gameId, 1);
+	}
 
 	if (matchmaking.length > 0) {
 		const playerIndex = matchmaking.findIndex(
