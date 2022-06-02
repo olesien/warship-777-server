@@ -229,8 +229,7 @@ const handleReady = async function (room, gameboard, callback) {
 
 	games[gameIndex].players[playerIndex].ready = !player.ready;
 
-	//Is the opponent ready? If so start game
-	if (opponent.ready) {
+	if (player.ready && opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
 
@@ -272,6 +271,7 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 		return;
 	}
 
+	games[gameIndex].idsTurn = opponent.id;
 	//Is the item hit a part of a ship?
 	if (opponentGridItem.part) {
 		//was a hit!
@@ -280,7 +280,6 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	} else if (!opponentGridItem.part) {
 		//was a miss
 		opponentGridItem.missed = true;
-		games[gameIndex].idsTurn = opponent.id;
 		handleMissTrue(room);
 	}
 
