@@ -5,10 +5,11 @@
 const debug = require("debug")("battleship:socket_controller");
 let io = null; // socket.io server instance
 
+//matchmaking and game objects
 let matchmaking = [];
 let games = [];
 
-// usersSearching and game object
+// Some planning
 
 /**
  * Start game function (step 2)
@@ -62,12 +63,15 @@ let games = [];
  * -> Receive a chat message and send it further to all in that room
  *
  */
+
+//Find the game
 const findGameIndex = (room) => {
 	const gameIndex = games.findIndex((game) => game.room === room);
 
 	return gameIndex;
 };
 
+//user connected, get these men
 const handleConnect = function ({ username, avatar }) {
 	console.log(matchmaking);
 	console.log(games);
@@ -75,34 +79,15 @@ const handleConnect = function ({ username, avatar }) {
 		id: this.id,
 		username,
 		avatar,
-		boats: [
-			{
-				type: "Sloop",
-				hp: 2,
-			},
-			{
-				type: "Cutter",
-				hp: 2,
-			},
-			{
-				type: "War Brig",
-				hp: 3,
-			},
-			{
-				type: "Grand Frigate",
-				hp: 4,
-			},
-		],
 		ready: false,
 		gameboard: [],
 	};
-	console.log("PLAYER", player);
+	debug(player);
 
+	//Add user to matchmaking
 	matchmaking.push(player);
-	// matchmaking.push(player)
 
-	// game.room = players[0].id
-
+	//Check if someone is already waiting. If so, start match
 	if (matchmaking.length === 1) {
 		let game = {
 			room: player.id,
@@ -118,20 +103,23 @@ const handleConnect = function ({ username, avatar }) {
 	// if 2, start the game
 	if (matchmaking.length > 1) {
 		debug(`User: "${username}" has connected with client id: ${this.id}`);
-		// this.broadcast.emit("user:joined", `User: ${username} - has connected`)
+
+		//Send message to both
 		this.to(matchmaking[0].id).emit(
 			"user:joined",
 			`User: ${username} - has connected to ${matchmaking[0].id}`
 		);
+		//Get reference to the game
 		const game = games.find((game) =>
 			game.players.find((player) => player.id === this.id)
 		);
+
+		//Send this to the clients
 		io.to(matchmaking[0].id).emit("players", game);
 
 		// this.broadcast.to(room.id).emit('user:disconnected', room.users[this.id]);
 
-		// push this game into the games array
-		console.log(game);
+		debug(game);
 		// empty the global players array
 		matchmaking = [];
 	}
@@ -144,6 +132,7 @@ const handleConnect = function ({ username, avatar }) {
 const handleDisconnect = function () {
 	debug(`Client ${this.id} disconnected :(`);
 
+	//Get game reference
 	const game = games.find((game) => {
 		const playerInRoom = game.players.some(
 			(player) => player.id == this.id
@@ -152,11 +141,14 @@ const handleDisconnect = function () {
 		if (playerInRoom) return game;
 	});
 
+	//If it exists
 	if (game) {
+		//Get person who left
 		const personWhoLeft = game.players.find(
 			(player) => player.id === this.id
 		);
 
+		//Send to user
 		io.to(game.room).emit("game:leave", personWhoLeft);
 	}
 	//remove matchmaking
@@ -165,6 +157,7 @@ const handleDisconnect = function () {
 		games.splice(gameId, 1);
 	}
 
+	//Remove from matchmaking if they quit while searching
 	if (matchmaking.length > 0) {
 		const playerIndex = matchmaking.findIndex(
 			(player) => player.id === this.id
@@ -173,27 +166,14 @@ const handleDisconnect = function () {
 			matchmaking.splice(playerIndex, 1);
 		}
 	}
-
-	// const game = games.find(game => game.room.includes(this.id))
-	// this.to(game).emit("user:disconnect", 'Your opponent has left the building')
-	// console.log(game)
-	// delete game.players[this.id];
 };
 
-/**
- * Handle a user sending a test message <-- This will be deleted
- *
- */
-const handleHello = async function (data) {
-	debug("Someone said something: ", data);
-};
-
+//Player start function
 const playerStart = (gameIndex) => {
 	const game = games[gameIndex];
 	const randomNumber = Math.floor(Math.random() * 2) + 1;
 
-	// console.log(randomNumber - 1);
-
+	//Change whos turn it is
 	games[gameIndex].idsTurn = game.players[randomNumber - 1].id;
 
 	return randomNumber === 1
@@ -207,10 +187,13 @@ const playerStart = (gameIndex) => {
 		  });
 };
 
+//One person had readied up
 const handleReady = async function (room, gameboard, callback) {
 	debug("room: " + room + " socketId: " + this.id);
+	//Get game reference
 	const gameIndex = findGameIndex(room);
 	const game = games[gameIndex];
+	//See how many parts have been placed
 	const partsPlaced = gameboard.reduce((prevValue, col) => {
 		const opponentPartsPlacedInCol = col.reduce((prevValue, row) => {
 			if (row.part) {
@@ -220,7 +203,8 @@ const handleReady = async function (room, gameboard, callback) {
 		}, 0);
 		return prevValue + opponentPartsPlacedInCol;
 	}, 0);
-	console.log(partsPlaced);
+
+	//If less than 11, send back so that they have to put in more
 	if (partsPlaced < 11) {
 		callback(true);
 		return;
@@ -232,6 +216,7 @@ const handleReady = async function (room, gameboard, callback) {
 		return;
 	}
 
+	//Get reference on player & opponent
 	const players = game.players;
 	//Get player index from the players list. <- Player is the person who made this request
 	const playerIndex = players.findIndex((player) => player.id === this.id);
@@ -244,6 +229,7 @@ const handleReady = async function (room, gameboard, callback) {
 
 	games[gameIndex].players[playerIndex].ready = !player.ready;
 
+	//Is the opponent ready? If so start game
 	if (opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
@@ -254,24 +240,23 @@ const handleReady = async function (room, gameboard, callback) {
 		return;
 	}
 
-	console.log("not ready");
 	//Opponent not ready. Toggle ready state!
 	io.to(room).emit("game:peopleready", games[gameIndex].players);
-
-	console.log(games[gameIndex].players[playerIndex]);
-	console.log(games[gameIndex].players[opponentIndex]);
 };
 
+//Player made an attempt to hit one in the grid
 const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	debug("room: " + room + " socketId: " + this.id);
+	//Grab reference to the game
 	const gameIndex = findGameIndex(room);
 	const game = games[gameIndex];
 	if (!game) {
 		return;
 	}
 
-	console.log(columnIndex, rowIndex);
+	debug(columnIndex, rowIndex);
 
+	//Grab player / opponent reference
 	const players = game.players;
 	//Get player index from the players list. <- Player is the person who made this request
 	const playerIndex = players.findIndex((player) => player.id === this.id);
@@ -287,24 +272,21 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 		return;
 	}
 
-	// console.log(
-	// 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
-	// );
-
+	//Is the item hit a part of a ship?
 	if (opponentGridItem.part) {
 		//was a hit!
-		console.log("PLAYER HIT");
 		opponentGridItem.hit = true;
 		handleHitTrue(room);
 	} else if (!opponentGridItem.part) {
 		//was a miss
-		console.log("PLAYER MISS");
 		opponentGridItem.missed = true;
 		games[gameIndex].idsTurn = opponent.id;
 		handleMissTrue(room);
 	}
 
+	//Enemy gameb oard
 	const opponentGameboard = opponent.gameboard;
+	//Game board
 	const opponentPartsHit = opponentGameboard.reduce((prevValue, col) => {
 		const opponentPartsHitInCol = col.reduce((prevValue, row) => {
 			if (row.hit) {
@@ -316,12 +298,9 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 		return prevValue + opponentPartsHitInCol;
 	}, 0);
 
-	// console.log("Opponent Gameboard", opponent.gameboard)
-	// console.log("Player Gameboard", player.gameboard)
-
 	const playerGameboard = player.gameboard;
-	// console.log(gridItem)
 
+	//Game board
 	const playerPartsHit = playerGameboard.reduce((prevValue, col) => {
 		const playerPartsHitInCol = col.reduce((prevValue, row) => {
 			if (row.hit) {
@@ -334,6 +313,7 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	}, 0);
 	console.log(playerPartsHit);
 
+	//Are now over 10 parts hit? If so end game
 	if (opponentPartsHit >= 11) {
 		console.log("game over");
 		io.to(room).emit("game:over", player);
@@ -349,29 +329,28 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	games[gameIndex].players[playerIndex].gameboard[columnIndex][rowIndex] =
 		playerGridItem;
 
-	// console.log(
-	// 	games[gameIndex].players[opponentIndex].gameboard[columnIndex][rowIndex]
-	// );
-
 	io.to(room).emit("game:handleHit", games[gameIndex]);
 };
 
+//Used for sound effects
 const handleHitTrue = async function (room) {
 	io.to(room).emit("game:handleHitTrue");
 };
 
+//Used for sound effects
 const handleMissTrue = async function (room) {
 	io.to(room).emit("game:handleMissTrue");
 };
 
+//Used for chat
 const handleMessage = async function (data) {
 	console.log(data);
 
 	io.to(data.room).emit("chat:message", data);
 };
 
+//If user wants to replay
 const handleReplay = function (room, grid, awaitPlayers) {
-	console.log(awaitPlayers);
 	const gameIndex = findGameIndex(room);
 	const game = games[gameIndex];
 	if (!game) {
@@ -386,10 +365,6 @@ const handleReplay = function (room, grid, awaitPlayers) {
 	const opponentIndex = playerIndex === 1 ? 0 : 1;
 	const opponent = players[opponentIndex];
 
-	// console.log(game)
-	// console.log(room)
-	// console.log("PLAYER:BEFORE", player)
-	// console.log("OPPONENT:BEFORE", opponent)
 	if (awaitPlayers === 2) {
 		// Reset players gameboards
 		player.gameboard = [];
@@ -398,10 +373,9 @@ const handleReplay = function (room, grid, awaitPlayers) {
 		// Reset players ready-state
 		player.ready = false;
 		opponent.ready = false;
-		// console.log("PLAYER:AFTER", player)
-		// console.log("OPPONENT:AFTER", opponent)
 	}
 
+	//Send replay
 	io.to(room).emit("game:replay", awaitPlayers);
 	playerStart(gameIndex);
 };
@@ -433,9 +407,6 @@ module.exports = function (socket, _io) {
 
 	// play again
 	socket.on("game:replay", handleReplay);
-
-	// handle hello
-	socket.on("user:hello", handleHello);
 
 	// handle user sending message
 	socket.on("chat:message", handleMessage);
