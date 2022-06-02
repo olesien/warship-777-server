@@ -156,6 +156,7 @@ const handleDisconnect = function () {
 		);
 
 		io.to(game.room).emit("game:leave", personWhoLeft);
+		
 	}
 	//remove matchmaking
 
