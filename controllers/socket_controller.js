@@ -219,7 +219,7 @@ const handleReady = async function (room, gameboard) {
 
 	games[gameIndex].players[playerIndex].ready = !player.ready;
 
-	if (opponent.ready) {
+	if (player.ready && opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
 
