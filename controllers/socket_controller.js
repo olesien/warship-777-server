@@ -221,7 +221,7 @@ const handleReady = async function (room, gameboard, callback) {
 		return prevValue + opponentPartsPlacedInCol;
 	}, 0);
 	console.log(partsPlaced);
-	if (partsPlaced < 4) {
+	if (partsPlaced < 11) {
 		callback(true);
 		return;
 	} else {
@@ -334,10 +334,10 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	}, 0);
 	console.log(playerPartsHit);
 
-	if (opponentPartsHit >= 4) {
+	if (opponentPartsHit >= 11) {
 		console.log("game over");
 		io.to(room).emit("game:over", player);
-	} else if (playerPartsHit >= 4) {
+	} else if (playerPartsHit >= 11) {
 		console.log("game over");
 		io.to(room).emit("game:over", opponent);
 	}
