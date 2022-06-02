@@ -247,6 +247,7 @@ const handleReady = async function (room, gameboard, callback) {
 	if (opponent.ready) {
 		//Other person is already ready. Start game.
 		console.log("Ready!!!");
+
 		playerStart(gameIndex);
 		io.to(room).emit("game:start", games[gameIndex]);
 
@@ -294,11 +295,13 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 		//was a hit!
 		console.log("PLAYER HIT");
 		opponentGridItem.hit = true;
+		handleHitTrue(room);
 	} else if (!opponentGridItem.part) {
 		//was a miss
 		console.log("PLAYER MISS");
 		opponentGridItem.missed = true;
 		games[gameIndex].idsTurn = opponent.id;
+		handleMissTrue(room);
 	}
 
 	const opponentGameboard = opponent.gameboard;
@@ -351,6 +354,20 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	// );
 
 	io.to(room).emit("game:handleHit", games[gameIndex]);
+};
+
+const handleHitTrue = async function (room) {
+	io.to(room).emit("game:handleHitTrue");
+};
+
+const handleMissTrue = async function (room) {
+	io.to(room).emit("game:handleMissTrue");
+};
+
+const handleMessage = async function (data) {
+	console.log(data);
+
+	io.to(data.room).emit("chat:message", data);
 };
 
 const handleReplay = function (room, grid, awaitPlayers) {
@@ -408,9 +425,18 @@ module.exports = function (socket, _io) {
 	// person hit
 	socket.on("user:hit", handleHit);
 
+	// person hits player's ship
+	socket.on("game:handleHitTrue", handleHitTrue);
+
+	// person miss player's ship
+	socket.on("game:handleMissTrue", handleMissTrue);
+
 	// play again
 	socket.on("game:replay", handleReplay);
 
 	// handle hello
 	socket.on("user:hello", handleHello);
+
+	// handle user sending message
+	socket.on("chat:message", handleMessage);
 };
