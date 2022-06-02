@@ -150,7 +150,6 @@ const handleDisconnect = function () {
 
 		//Send to user
 		io.to(game.room).emit("game:leave", personWhoLeft);
-		
 	}
 	//remove matchmaking
 	const gameId = games.findIndex((game) => game.room === this.id);
@@ -272,6 +271,7 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 		return;
 	}
 
+	games[gameIndex].idsTurn = opponent.id;
 	//Is the item hit a part of a ship?
 	if (opponentGridItem.part) {
 		//was a hit!
@@ -280,7 +280,6 @@ const handleHit = async function ({ room, columnIndex, rowIndex }) {
 	} else if (!opponentGridItem.part) {
 		//was a miss
 		opponentGridItem.missed = true;
-		games[gameIndex].idsTurn = opponent.id;
 		handleMissTrue(room);
 	}
 
